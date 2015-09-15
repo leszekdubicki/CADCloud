@@ -1,52 +1,37 @@
+#CADCloud application for sharing enginering info between CAD apps
+#Leszek Dubicki
+#student number: x14125439
 
-# A very simple Flask Hello World app for you to get started with...
+from ccapp import *
 
-from flask import Flask, jsonify, request
-
-projects = [
-    {'id': 1,
-    'name': 'Project 1',
-    'number': '12345'
-    },
-    {'id': 2,
-    'name': 'Project 2',
-    'number': '12346'
-    }]
-numerics = [
-    {'id': 1
-        'value': 1254,
-        'name': 'h1',
-        'link': 'D1@Sketch2@part1.sldprt',
-        'unit': 'mm'
-    },
-    {'id': 2
-        'value': 125456.3,
-        'name': 'b1',
-        'link': 'D2@Sketch2@part1.sldprt',
-        'unit': 'mm'
-    }]
-
-app = Flask(__name__)
-
-@app.route('/cad/api/v1.0/variables/')
-def get_customers():
-    return jsonify({'customers':customers})
-
-@app.route('/shop/api/v1.0/customers/<int:customer_id>', methods = ['GET'])
-def get_customer(customer_id):
-    customer = [customer for customer in customers if customer['id'] == customer_id]
-    return jsonify({'customer':customer[0]})
-
-@app.route('/shop/api/v1.0/customers/', methods = ['POST'])
-def create_customer():
-    customer = {
-        'id': customers[-1]['id']+1,
-        'name': request.json['name'],
-        'email': request.json['email']}
-    customers.append(customer)
-    return jsonify({'customer':customer}), 201
 
 @app.route('/')
-def hello_world():
-    return 'Hello from Flask!'
+def startPage():
+    return render_template('index.html', title="CADCloud")
 
+
+#get all variables for given project number
+@app.route('/cad/api/v0.1/variables/<int:project_id>')
+def get_variables(project_id):
+    return jsonify({'numerics':numerics})
+
+@app.route('/cad/api/v0.1/numerics/<int:var_id>', methods = ['GET'])
+def get_numeric(var_id):
+    #get numeric with given id:
+    N = Number.query.get(var_id)
+    return jsonify({'number':number})
+
+@app.route('/cad/api/v0.1/strings/', methods = ['POST'])
+def create_string_variable():
+    stringVar = {
+        'id': strings[-1]['id']+1,
+        'name': request.json['name'],
+        'project_id': request.json['project_id'],
+        'link': request.json['link']}
+    strings.append(stringVar)
+    return jsonify({'string':stringVar}), 201
+
+
+if __name__ == '__main__':
+    app.run(host='0.0.0.0', debug=True)
+    manager.run()
