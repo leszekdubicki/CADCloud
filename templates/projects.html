@@ -1,0 +1,31 @@
+{% extends "layout.html" %}
+{% block body %}
+<div class="container">
+  <h2>List o projects:</h2>
+  <table class="table table-hover">
+    <thead>
+      <tr>
+        {% for h in headers %}
+          <th>{{h[1]}}</th>
+        {% endfor %}
+        <th></th>
+      </tr>
+    </thead>
+    <tbody>
+      {% for pid in projects %}
+      <tr>
+        {% for h in headers %}
+          <td>{{projects[pid][h[0]]}}</td>
+        {% endfor %}
+        <td><a href="{{url_for("show_project",project_id=pid)}}">Show</a></td>
+        <td>
+            {%for s in projects[pid].strings%}
+                <p>{{s}}</p>
+            {%endfor%}
+        </td>
+      </tr>
+      {% endfor %}
+    </tbody>
+  </table>
+</div>
+{% endblock %}

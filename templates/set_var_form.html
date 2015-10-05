@@ -1,0 +1,42 @@
+{% extends "layout.html" %}
+{% block body %}
+<h3>Add variables for project {{project['name']}}</h3>
+<form class="form-horizontal" action="{{url_for("/cad/api/v0.1/set_variable/"+project['id'])}}" method=post>
+  <div class="form-group">
+    <label for="inputEmail3" class="col-sm-2 control-label">Variable Name</label>
+    <div class="col-sm-5">
+      <input type="text" class="form-control" id="inputEmail3" placeholder="varname" name="name">
+    </div>
+  </div>
+  <div class="form-group">
+    <label for="inputPassword3" class="col-sm-2 control-label">Description</label>
+    <div class="col-sm-5">
+      <textarea class="form-control" id="inputPassword3" placeholder="Type short description" rows="4" name="description"></textarea>
+    </div>
+  </div>
+  <div class="form-group">
+    <label for="varType" class="col-sm-2 control-label">Variable Type</label>
+    <div class="col-sm-5">
+        <select "form-control">
+            <option>Numeric</option>
+            <option>String</option>
+            <option>Boolean</option>
+        </select>
+    </div>
+  </div>
+  <div class="form-group">
+    <div class="col-sm-offset-2 col-sm-10">
+      <div class="checkbox">
+        <label>
+          <input type="checkbox"> Remember me
+        </label>
+      </div>
+    </div>
+  </div>
+  <div class="form-group">
+    <div class="col-sm-offset-2 col-sm-10">
+      <button type="submit" class="btn btn-default">Sign in</button>
+    </div>
+  </div>
+</form>
+{% endblock %}
