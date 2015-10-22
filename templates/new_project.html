@@ -3,6 +3,7 @@
 {% import "bootstrap/fixes.html" as fixes %}
 {% import "bootstrap/utils.html" as util %}
 
-{% block body %}
-{{ wtf.quick_form(form, button_map={'submit_button': 'primary'}) }}
+{% block content %}
+    {{ wtf.quick_form(form, form_type='horizontal', button_map={'submit_button': 'primary'}) }}
+</form>
 {% endblock %}

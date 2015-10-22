@@ -1,0 +1,33 @@
+{% extends "layout.html" %}
+{% import "bootstrap/wtf.html" as wtf %}
+{% import "bootstrap/fixes.html" as fixes %}
+{% import "bootstrap/utils.html" as util %}
+
+{% block content %}
+  <div class="container col-md-7">
+  <h2>Project Record:</h2>
+  <table class="table table-bordered">
+  <tbody>
+    <tr>
+        <td class="col-md-2">Project Name:</td>
+        <td>{{project.name}}</td>
+    </tr>
+    <tr>
+        <td class="col-md-2">Project Number:</td>
+        <td>{{project.project_number}}</td>
+    </tr>
+    <tr>
+        <td class="col-md-2">Project Description:</td>
+        <td>{%if project.description == None%}
+              No description for the project
+        {%else%}
+              {{project.description}}
+        {%endif%}</td>
+    </tr>
+  </tbody>
+  </table>
+  <a href="{{url_for("edit_project", project_id = project.id)}}" class="btn btn-default" role="button">Edit</a>
+  </div>
+  {% block variables %}
+  {% endblock %}
+{% endblock %}

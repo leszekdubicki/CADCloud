@@ -1,5 +1,5 @@
 {% extends "layout.html" %}
-{% block body %}
+{% block content %}
 <div class="container">
   <h2>List o projects:</h2>
   <table class="table table-hover">
@@ -17,7 +17,7 @@
         {% for h in headers %}
           <td>{{projects[pid][h[0]]}}</td>
         {% endfor %}
-        <td><a href="{{url_for("show_project",project_id=pid)}}">Show</a></td>
+        <td><a href="{{url_for("get_project",project_id=pid)}}">Show</a></td>
         <td>
             {%for s in projects[pid].strings%}
                 <p>{{s}}</p>
@@ -27,5 +27,6 @@
       {% endfor %}
     </tbody>
   </table>
+  <a href="{{url_for("add_project")}}" class="btn btn-default" role="button">New Project</a>
 </div>
 {% endblock %}

@@ -42,8 +42,14 @@ def get_projects():
         
     
 @app.route('/cad/api/v0.1/projects/<int:project_id>')
-def show_project(project_id):
-    return "UNDER CONSTRUCTION"
+def get_project(project_id):
+    project = Project.query.get(project_id)
+    if request.headers['Content-Type'] == 'application/json':
+        #get json object with project data:
+        VAR = request.json
+        return jsonify(VAR)
+    else:
+        return render_template('show_project.html',project = project, active = '', get_active = get_active)
 
 #projects adding:
 @app.route('/cad/api/v0.1/projects/add', methods = ['GET','POST'])
@@ -53,11 +59,93 @@ def add_project():
         VAR = request.json
         return jsonify(VAR)
     else:
-        if request.method == "GET":
-            #return project creation form:
-            form = ProjectAddForm()
-            form.validate_on_submit()
-            return render_template('new_project.html',form = form, active = 'projects', get_active = get_active)
+        #return project creation form:
+        form = ProjectAddForm()
+        if form.validate_on_submit():
+            #add projet to database:
+            p = Project(request.form['name'], request.form['project_number'], request.form['description'])
+            db.session.add(p)
+            db.session.commit()
+            return redirect(url_for('get_project', project_id = p.id))
+        return render_template('new_project.html',form = form, active = '', get_active = get_active, method = 'POST')
+
+#projects editing:
+@app.route('/cad/api/v0.1/projects/edit/<int:project_id>', methods = ['GET', 'PUT', 'POST'])
+def edit_project(project_id):
+    if request.headers['Content-Type'] == 'application/json':
+        #get json object with project data:
+        VAR = request.json
+        return jsonify(VAR)
+    else:
+        #get project: 
+        P = Project.query.get(project_id)
+        #return project creation form:
+        form = ProjectEditForm(name = P.name, project_number = P.project_number, description = P.description)
+        #if request.method == 'PUT' and form.validate():
+        print "metoda: " + request.method
+        if form.validate_on_submit():
+            print "if dziaaaaalaaa"
+            #add projet to database:
+            #db.session.add(p)
+            if not request.form['name'] == P.name:
+                P.name = request.form['name']
+            if not request.form['project_number'] == P.project_number:
+                P.project_number = request.form['project_number']
+            if not request.form['description'] == P.description:
+                P.description = request.form['description']
+            db.session.commit()
+            return redirect(url_for('get_project', project_id = P.id))
+        return render_template('new_project.html',form = form, active = '', get_active = get_active)
+
+#creation of a variable
+@app.route('/cad/api/v0.1/variables/add/<int:project_id>', methods = ['GET','POST'])
+def add_variable(project_id):
+    #type of variable must be worked out from the request:
+    if request.headers['Content-Type'] == 'application/json':
+        #get json object:
+        VAR = request.content
+    else:
+        P = Project.query.get(project_id)
+        p = P.__dict__
+        form = VariableAddForm()
+        if form.validate_on_submit():
+            #add variable to database:
+            if request.form['vType'].lower() == 'string':
+                #creating string variable for the project:
+                v = String(request.form['name'],request.form['value'], project_id, request.form['comment'])
+            db.session.add(v)
+            db.session.commit()
+            return redirect(url_for('get_project', project_id = project_id))
+        return render_template('new_variable.html', project = P, form = form, active = '', get_active = get_active)
+
+#editing a variable
+@app.route('/cad/api/v0.1/variables/edit/<int:project_id>/<string:variable_type>/<int:variable_id>', methods = ['GET', 'PUT', 'POST'])
+def edit_variable(project_id, variable_type, variable_id):
+    #type of variable must be worked out from the request:
+    if request.headers['Content-Type'] == 'application/json':
+        #get json object:
+        VAR = request.content
+    else:
+        P = Project.query.get(project_id)
+        p = P.__dict__
+        if variable_type == 'string':
+            v = String.query.get(variable_id)
+        elif variable_type == 'number':
+            v = Number.query.get(variable_id)
+        elif variable_type == 'boolean':
+            v = Boolean.query.get(variable_id)
+        form = VariableEditForm(name = v.name, value = v.value, comment = v.comment)
+        if form.validate_on_submit():
+            #add variable to database:
+            if not request.form['name'] == v.name:
+                v.name = request.form['name']
+            if not request.form['value'] == v.value:
+                v.value = request.form['value']
+            if not request.form['comment'] == v.comment:
+                v.comment = request.form['comment']
+            db.session.commit()
+            return redirect(url_for('get_project', project_id = project_id))
+        return render_template('new_variable.html', project = P, form = form, active = '', get_active = get_active)
 
 #get all variables for given project number
 @app.route('/cad/api/v0.1/variables/<int:project_id>')
@@ -100,18 +188,6 @@ def get_var(project_id, var_name):
     if '_sa_instance_state' in variable:
         variable.__delitem__('_sa_instance_state')
     return jsonify({var_name:variable})
-
-#get form for creation of a variable
-@app.route('/cad/api/v0.1/set_variable/<int:project_id>', methods = ['GET'])
-def set_var_form(project_id):
-    #type of variable must be worked out from the request:
-    if request.headers['Content-Type'] == 'application/json':
-        #get json object:
-        VAR = request.content
-    else:
-        P = Project.query.get(project_id)
-        p = P.__dict__
-        return render_template('set_var_form.html', title="CADCloud", project = p, active = 'home', get_active = get_active)
 
 #set a variable for a project
 @app.route('/cad/api/v0.1/set_variable/<int:project_id>/<string:var_name>', methods = ['POST'])
