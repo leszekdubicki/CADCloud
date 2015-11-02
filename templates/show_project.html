@@ -26,6 +26,24 @@
             <td><a href = {{url_for("edit_variable",project_id = project.id, variable_type = 'string', variable_id = s.id)}}>Edit</a></td>
         </tr>
     {% endfor %}
+    {% for s in project.numbers %}
+        <tr>
+            <td>{{s.name}}</td>
+            <td>Number</td>
+            <td>{{s.value}}</td>
+            <td>{{s.comment}}</td>
+            <td><a href = {{url_for("edit_variable",project_id = project.id, variable_type = 'string', variable_id = s.id)}}>Edit</a></td>
+        </tr>
+    {% endfor %}
+    {% for s in project.booleans %}
+        <tr>
+            <td>{{s.name}}</td>
+            <td>Boolean</td>
+            <td>{{s.value}}</td>
+            <td>{{s.comment}}</td>
+            <td><a href = {{url_for("edit_variable",project_id = project.id, variable_type = 'string', variable_id = s.id)}}>Edit</a></td>
+        </tr>
+    {% endfor %}
   </tbody>
   </table>
   <a href="{{url_for("add_variable", project_id = project.id)}}" class="btn btn-default" role="button">Add Variable</a>

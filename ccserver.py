@@ -54,9 +54,13 @@ def get_project(project_id):
 #projects adding:
 @app.route('/cad/api/v0.1/projects/add', methods = ['GET','POST'])
 def add_project():
-    if request.headers['Content-Type'] == 'application/json':
+    if request.headers['Content-Type'] == 'application/json' and request.method.lower() == 'post':
         #get json object with project data:
-        VAR = request.json
+        VAR = request.json['project']
+        if True:#there must be validators here
+            p = Project(VAR['name'], VAR['project_number'], VAR['description'])
+            db.session.add(p)
+            db.session.commit()
         return jsonify(VAR)
     else:
         #return project creation form:
@@ -74,7 +78,13 @@ def add_project():
 def edit_project(project_id):
     if request.headers['Content-Type'] == 'application/json':
         #get json object with project data:
-        VAR = request.json
+        P = Project.query.get(project_id)
+        VAR = request.json['project']
+        keys = ['name', 'project_number', 'description']
+        for k in keys:
+            if k in VAR  and not VAR[k] == P.name:
+                P.name = VAR[k]
+        db.session.commit()
         return jsonify(VAR)
     else:
         #get project: 
@@ -82,9 +92,7 @@ def edit_project(project_id):
         #return project creation form:
         form = ProjectEditForm(name = P.name, project_number = P.project_number, description = P.description)
         #if request.method == 'PUT' and form.validate():
-        print "metoda: " + request.method
         if form.validate_on_submit():
-            print "if dziaaaaalaaa"
             #add projet to database:
             #db.session.add(p)
             if not request.form['name'] == P.name:
@@ -102,8 +110,29 @@ def edit_project(project_id):
 def add_variable(project_id):
     #type of variable must be worked out from the request:
     if request.headers['Content-Type'] == 'application/json':
+        P = Project.query.get(project_id)
         #get json object:
-        VAR = request.content
+        VAR = request.json['variable']
+        if 'type' in VAR and VAR['type'] == 'string':
+                if 'name' in VAR and 'value' in VAR:
+                    if not 'comment' in VAR:
+                        VAR['comment'] == ''
+                    v = String(VAR['name'],VAR['value'], project_id, VAR['comment'])
+        elif 'type' in VAR and VAR['type'] == 'number':
+                if 'name' in VAR and 'value' in VAR:
+                    if not 'comment' in VAR:
+                        VAR['comment'] == ''
+                    if not 'unit' in VAR:
+                        VAR['unit'] == ''
+                    v = Number(VAR['name'],VAR['value'], project_id, VAR['comment'], unit = VAR['unit'])
+        elif 'type' in VAR and VAR['type'] == 'boolean':
+                if 'name' in VAR and 'value' in VAR:
+                    if not 'comment' in VAR:
+                        VAR['comment'] == ''
+                    v = Boolean(VAR['name'],VAR['value'], project_id, VAR['comment'])
+        db.session.add(v)
+        db.session.commit()
+        return jsonify({'variable':VAR})
     else:
         P = Project.query.get(project_id)
         p = P.__dict__
@@ -113,6 +142,18 @@ def add_variable(project_id):
             if request.form['vType'].lower() == 'string':
                 #creating string variable for the project:
                 v = String(request.form['name'],request.form['value'], project_id, request.form['comment'])
+            elif request.form['vType'].lower() == 'numeric':
+                #creating numeric variable for the project:
+                v = Number(request.form['name'],request.form['value'], project_id, request.form['comment'])
+            elif request.form['vType'].lower() == 'boolean':
+                #creating boolean variable for the project:
+                if request.form['value'].lower() in ['true', '1']:
+                    value = True
+                elif request.form['value'].lower() in ['false', '0']:
+                    value = False
+                #if value == None:
+                    #return error
+                v = Boolean(request.form['name'],value, project_id, request.form['comment'])
             db.session.add(v)
             db.session.commit()
             return redirect(url_for('get_project', project_id = project_id))
@@ -123,9 +164,25 @@ def add_variable(project_id):
 def edit_variable(project_id, variable_type, variable_id):
     #type of variable must be worked out from the request:
     if request.headers['Content-Type'] == 'application/json':
+        P = Project.query.get(project_id)
+        VAR = request.json['variable']
+        if variable_type == 'string':
+            v = String.query.get(variable_id)
+        elif variable_type == 'number':
+            v = Number.query.get(variable_id)
+        elif variable_type == 'boolean':
+            v = Boolean.query.get(variable_id)
         #get json object:
-        VAR = request.content
+        if not VAR['name'] == v.name:
+            v.name = VAR['name']
+        if not VAR['value'] == v.value:
+            v.value = VAR['value']
+        if not VAR['comment'] == v.comment:
+            v.comment = VAR['comment']
+        db.session.commit()
+        return jsonify({'variable':VAR})
     else:
+        #regular html request
         P = Project.query.get(project_id)
         p = P.__dict__
         if variable_type == 'string':
@@ -134,7 +191,7 @@ def edit_variable(project_id, variable_type, variable_id):
             v = Number.query.get(variable_id)
         elif variable_type == 'boolean':
             v = Boolean.query.get(variable_id)
-        form = VariableEditForm(name = v.name, value = v.value, comment = v.comment)
+        form = VariableEditForm(name = v.name, value = v.value, comment = v.comment, vType = variable_type)
         if form.validate_on_submit():
             #add variable to database:
             if not request.form['name'] == v.name:
