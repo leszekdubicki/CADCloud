@@ -12,14 +12,34 @@ class CCloud:
         r = requests.get(self._url + uri, headers = self._headers)
         if r.status_code == 200:
             return r.json()
-            #I'd rather not store all the projects not to consume too much memory
+        else:
+            return {'status_code':r.status_code, 'projects': None}
+            #I'd rather not store all the projects not to consume too much memory (see below)
+    def get_projects_list(self):
+        #gets list of projects in format {'number':'id'}
+        uri = '/cad/api/v0.1/projects_list'
+        r = requests.get(self._url + uri, headers = self._headers)
+        if r.status_code == 200:
+            return r.json()
+        else:
+            return {'status_code':r.status_code, 'projects': None}
     def get_variables(self, project_id):
         #gets list of variables of one project given by id
         uri = '/cad/api/v0.1/variables/' + str(project_id)
         r = requests.get(self._url + uri, headers = self._headers)
         if r.status_code == 200:
             return r.json()
+        else:
+            return {'status_code':r.status_code, 'numbers':None, 'strings':None, 'booleans':None}
         
+    def get_variable(self, project_id, variable_name):
+        #gets one variable
+        uri = '/cad/api/v0.1/get_variable/' + str(project_id) + '/' + str(variable_name)
+        r = requests.get(self._url + uri, headers = self._headers)
+        if r.status_code == 200:
+            return r.json()
+        else:
+            return {'status_code':r.status_code,variable_name:None}
     def get_project_by_number(self, project_number):
         #project_number should be a string already but it's converted to str just in case:
         uri = '/cad/api/v0.1/projects_by_num/' + str(project_number)
@@ -27,6 +47,8 @@ class CCloud:
         r = requests.get(self._url + uri, headers = self._headers)
         if r.status_code == 200:
             return r.json()
+        else:
+            return {'status_code':r.status_code,'project':None}
     def get_project(self, project_id):
         #gets project by id
         uri = '/cad/api/v0.1/projects/' + str(project_id)
@@ -34,6 +56,8 @@ class CCloud:
         r = requests.get(self._url + uri, headers = self._headers)
         if r.status_code == 200:
             return r.json()
+        else:
+            return {'status_code':r.status_code,'project':None}
 
 class CCStore(CCloud):
     #class storing some values for the projects and list of projects

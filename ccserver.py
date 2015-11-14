@@ -63,7 +63,7 @@ def get_projects_list():
             #P2 = Project.query.get(p.id)
             #dictionary to find project via by project number
             Pros[p.project_number] =  p.id
-            return jsonify({'projects':Pros})
+        return jsonify({'projects':Pros})
     else:
         #redirect to regular projects list page
         return redirect(url_for('get_projects'))
@@ -93,6 +93,7 @@ def get_project_by_number(project_number):
         return render_template('show_project.html',project = project, active = '', get_active = get_active)
     """
     return redirect(url_for('get_project', project_id = project.id))
+
 
 #projects adding:
 @app.route('/cad/api/v0.1/projects/add', methods = ['GET','POST'])
