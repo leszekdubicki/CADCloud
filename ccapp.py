@@ -30,6 +30,38 @@ migrate = Migrate(app, db)
 manager = Manager(app)
 manager.add_command('db', MigrateCommand)
 
+#function for creating dictionary from a model.
+def dict_model(model):
+    M = {}
+    keysToRem = []
+    for key in model.__dict__:
+        try:
+            j = jsonify({key: model.__dict__[key]})
+        except:
+            keysToRem.append(key)
+    for key in model.__dict__:
+        #add a key:
+        if not key in keysToRem: 
+            M[key] = model.__dict__[key]
+    return M
+            
+#errorhandler...
+#from http://flask.pocoo.org/docs/0.10/patterns/apierrors/
+class InvalidUsage(Exception):
+    status_code = 400
+
+    def __init__(self, message, status_code=None, payload=None):
+        Exception.__init__(self)
+        self.message = message
+        if status_code is not None:
+            self.status_code = status_code
+        self.payload = payload
+
+    def to_dict(self):
+        rv = dict(self.payload or ())
+        rv['message'] = self.message
+        return rv
+
 #Models Definition:
 class Project(db.Model):
     #class for projects record
@@ -47,8 +79,24 @@ class Project(db.Model):
         self.description = description
     def __repr__(self):
         return "<Project %r>" % self.project_number
+    def json(self, var_name = 'project'):
+        #returns json representation of the model:
+        variable = self.__dict__
+        if '_sa_instance_state' in variable:
+            variable.__delitem__('_sa_instance_state')
+        return jsonify({var_name:variable})
 
-    
+def findProject(projectNumber):
+    #funcrion to find out if project with given name exists. returns this project.
+    #N = Number.query.filter_by(project_id = project_id)
+    projects = Project.query.filter_by(project_number = projectNumber)
+    if projects.count() == 0:
+        return None
+    elif projects.count() > 1:
+        return False #not perfect, just to distinguish from none
+    else:
+        return projects.first()
+   
 class Number(db.Model):
     #__tablename__ = "numbers"
     id = db.Column(db.Integer, primary_key=True)
@@ -73,6 +121,7 @@ class String(db.Model):
     link = db.Column(db.String(128))
     comment = db.Column(db.String(256))
     project_id = db.Column(db.Integer, db.ForeignKey('project.id'))
+    type = 'string'
     def __init__(self, name, value, project_id, comment = "", link = ""):
         self.value = value
         self.name = name
@@ -94,12 +143,54 @@ class Boolean(db.Model):
         self.comment = comment
         self.link = link
 
-#forms definitions:
+
+def findVariable(projectId, varName):
+    #funcrion to find out if variable with given name exists. returns this variable or False.
+    #N = Number.query.filter_by(project_id = project_id)
+    strVariables = String.query.filter_by(project_id = projectId, name = varName)
+    numVariables = Number.query.filter_by(project_id = projectId, name = varName)
+    boolVariables = Boolean.query.filter_by(project_id = projectId, name = varName)
+    print boolVariables.count()
+    print numVariables.count()
+    print strVariables.count()
+    notUnique = numVariables.count() != 0 or strVariables.count() != 0 or boolVariables.count() != 0
+    print notUnique
+    if not notUnique:
+        return None
+    else:
+        variables = []
+        if numVariables.count() > 0:
+            for v in numVariables:
+                variables.append(v)
+        if strVariables.count() > 0:
+            for v in strVariables:
+                variables.append(v)
+        if boolVariables.count() > 0:
+            for v in boolVariables:
+                variables.append(v)
+        print variables
+        if variables.__len__() > 1:
+            return False #not perfect, just to distinguish from none
+        elif variables.__len__() == 1:
+            return variables[0]
+#
+##forms definitions:
 class ProjectAddForm(Form):
     name = TextField('Project Name', description='Enter Name of the project here',validators=[Required()])
     project_number = TextField('Project Number', description='Number of the project', validators=[Required()])
     description = TextAreaField(u'Project Description', [validators.optional(), validators.length(max=200)])
     submit_button = SubmitField('Create Project')
+    def validate(self):
+        rv = Form.validate(self)
+        if not rv:
+            return False
+        #look for a project with given number (must be unique)
+        pro = findProject(self.project_number.data)
+        if pro == None:
+            return True
+        else:
+            self.project_number.errors.append('Project with given number already exists!')
+            
 
 class ProjectEditForm(ProjectAddForm):
     submit_button = SubmitField('Update Project')
@@ -110,19 +201,32 @@ class VariableEditForm(Form):
     comment = TextAreaField(u'Comment', [validators.optional(), validators.length(max=200)])
     submit_button = SubmitField('Update Variable')
     vType = None
+    def setProjectId(self, projectId):
+        self.projectId = projectId
+    def setType(self, varType):
+        self.varType = varType
+    def getType(self):
+        if self.vType == None:
+            return self.varType
+        else:
+            return self.vType.data
     def validate(self):
         rv = Form.validate(self)
         if not rv:
             return False
-        if self.vType == None:
-            return True
+        #check if variable with the same name already exists:
+        var = findVariable(self.projectId, self.name.data)
+        if not var == None:
+            self.name.errors.append('Variable with this name already exists within this project!')
+            return False
+        if not self.vType == None:
+            typ = self.vType.data.lower()
         else:
-            typ = self.vType.data
+            typ = None
         if typ == 'number':
             #just check if value can be converted:
             try:
                 float(self.value.data)
-                return True
             except:
                 self.value.errors.append('Must be a number if variable type is number')
                 return False
@@ -131,10 +235,8 @@ class VariableEditForm(Form):
             if self.value.data not in ['1', '0', 'True', 'False', 'true', 'false']:
                 self.value.errors.append('Must be logic value if variable type is boolean')
                 return False
-            else:
-                return True
-        else:
-            return True
+        #return true if there are no errors
+        return True
 
 class VariableAddForm(VariableEditForm):
     #http://wtforms.simplecodes.com/docs/0.6.1/fields.html#wtforms.fields.SelectField

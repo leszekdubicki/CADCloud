@@ -12,6 +12,15 @@ def get_active(this, active):
     else:
         return ""
 
+
+#errorhandler...
+#from http://flask.pocoo.org/docs/0.10/patterns/apierrors/
+@app.errorhandler(InvalidUsage)
+def handle_invalid_usage(error):
+    response = jsonify(error.to_dict())
+    response.status_code = error.status_code
+    return response
+
 #Start Page:
 @app.route('/')
 def start_page():
@@ -29,27 +38,61 @@ def get_projects():
     P = Project.query.all()
     Pros = {}
     for p in P:
-        P2 = Project.query.get(p.id)
-        Pros[p.id] = P2.__dict__
-        if '_sa_instance_state' in Pros[p.id]:
-            Pros[p.id].__delitem__('_sa_instance_state')
+        #P2 = Project.query.get(p.id)
+        Pros[p.id] = dict_model(p) 
+        #Pros[p.id] = P2.__dict__
+        #if '_sa_instance_state' in Pros[p.id]:
+        #    Pros[p.id].__delitem__('_sa_instance_state')
+        
     if request.headers['Content-Type'] == 'application/json':
-        return jsonify(Pros)
+        return jsonify({'projects':Pros})
     else:
         #What to show in the table, Combinations of key name - Header text 
         headers = [['name', 'Project Name'],['project_number','Project Number'], ['description','Project descriprion']]
         return render_template('projects.html',projects = Pros, headers = headers, active = 'projects', get_active = get_active)
         
+
+@app.route('/cad/api/v0.1/projects_list')
+def get_projects_list():
+    #only list of projects id-s and their numbers
+    #to keep network traffic low
+    if request.headers['Content-Type'] == 'application/json':
+        P = Project.query.all()#should be limited to only these two fields.
+        Pros = {}
+        for p in P:
+            #P2 = Project.query.get(p.id)
+            #dictionary to find project via by project number
+            Pros[p.project_number] =  p.id
+            return jsonify({'projects':Pros})
+    else:
+        #redirect to regular projects list page
+        return redirect(url_for('get_projects'))
     
+
 @app.route('/cad/api/v0.1/projects/<int:project_id>')
 def get_project(project_id):
     project = Project.query.get(project_id)
+    if request.headers['Content-Type'] == 'application/json':
+        #get json object with project data:
+        P2 = Project.query.get(project_id)
+        pro =dict_model(P2) 
+        return jsonify({'project':pro})
+    else:
+        return render_template('show_project.html',project = project, active = '', get_active = get_active)
+
+#same but get project by number. There shouldn't be two projects with the same number, newertheless app will return the first project with given number
+@app.route('/cad/api/v0.1/projects_by_num/<string:project_number>')
+def get_project_by_number(project_number):
+    project = Project.query.filter_by(project_number = project_number).first()
+    """
     if request.headers['Content-Type'] == 'application/json':
         #get json object with project data:
         VAR = request.json
         return jsonify(VAR)
     else:
         return render_template('show_project.html',project = project, active = '', get_active = get_active)
+    """
+    return redirect(url_for('get_project', project_id = project.id))
 
 #projects adding:
 @app.route('/cad/api/v0.1/projects/add', methods = ['GET','POST'])
@@ -137,6 +180,7 @@ def add_variable(project_id):
         P = Project.query.get(project_id)
         p = P.__dict__
         form = VariableAddForm()
+        form.setProjectId(project_id)
         if form.validate_on_submit():
             #add variable to database:
             if request.form['vType'].lower() == 'string':
@@ -163,6 +207,7 @@ def add_variable(project_id):
 @app.route('/cad/api/v0.1/variables/edit/<int:project_id>/<string:variable_type>/<int:variable_id>', methods = ['GET', 'PUT', 'POST'])
 def edit_variable(project_id, variable_type, variable_id):
     #type of variable must be worked out from the request:
+    variable_type = variable_type.lower()
     if request.headers['Content-Type'] == 'application/json':
         P = Project.query.get(project_id)
         VAR = request.json['variable']
@@ -192,6 +237,10 @@ def edit_variable(project_id, variable_type, variable_id):
         elif variable_type == 'boolean':
             v = Boolean.query.get(variable_id)
         form = VariableEditForm(name = v.name, value = v.value, comment = v.comment, vType = variable_type)
+        #below setters help finding out id the name of the variable isn't taken:
+        form.setProjectId(project_id)
+        #form.setType(variable_type)
+        #actually type doesn't matter, there can be only one variable with given name
         if form.validate_on_submit():
             #add variable to database:
             if not request.form['name'] == v.name:
@@ -204,6 +253,20 @@ def edit_variable(project_id, variable_type, variable_id):
             return redirect(url_for('get_project', project_id = project_id))
         return render_template('new_variable.html', project = P, form = form, active = '', get_active = get_active)
 
+#editing a variable by name:
+@app.route('/cad/api/v0.1/variables/edit/<int:project_id>/<string:variable_name>', methods = ['GET', 'PUT', 'POST'])
+def edit_variable_by_name(project_id, variable_name):
+    v = findVariable(project_id, variable_name)
+    if v == None:
+        #no variable with given name, must return error of sime kind
+        raise InvalidUsage('Variable not found', status_code=410)
+    elif not v == False:
+        #we have one variable, return json of it:
+        if request.headers['Content-Type'] == 'application/json':
+            return jsnify({'variable':dict_model(v)})
+        else:
+            return redirect(url_for('edit_variable', project_id = project_id, variable_type = v.type, variable_id = v.id))
+
 #get all variables for given project number
 @app.route('/cad/api/v0.1/variables/<int:project_id>')
 def get_variables(project_id):
@@ -213,19 +276,13 @@ def get_variables(project_id):
     B = Boolean.query.filter_by(project_id = project_id)
     numerics = []
     for n in N:
-        numerics.append(n.__dict__)
-        if '_sa_instance_state' in numerics[-1]:
-            numerics[-1].__delitem__('_sa_instance_state')
+        numerics.append(dict_model(n))
     strings = []
     for s in S:
-        strings.append(s.__dict__)
-        if '_sa_instance_state' in strings[-1]:
-            strings[-1].__delitem__('_sa_instance_state')
+        strings.append(dict_model(s))
     booleans = []
     for b in B:
-        booleans.append(b.__dict__)
-        if '_sa_instance_state' in booleans[-1]:
-            booleans[-1].__delitem__('_sa_instance_state')
+        booleans.append(dict_model(b))
     if request.headers['Content-Type'] == 'application/json':
         return jsonify({'numbers':numerics, 'strings':strings, 'booleans':booleans})
     else:
@@ -246,6 +303,9 @@ def get_var(project_id, var_name):
         variable.__delitem__('_sa_instance_state')
     return jsonify({var_name:variable})
 
+
+#______________________________________________________________________________________________________
+#all below will be probably removed
 #set a variable for a project
 @app.route('/cad/api/v0.1/set_variable/<int:project_id>/<string:var_name>', methods = ['POST'])
 def set_var(project_id, var_name):
