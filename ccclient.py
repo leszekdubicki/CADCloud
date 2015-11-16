@@ -3,9 +3,14 @@ import requests
 
 class CCloud:
     #class to perform operations on single CADCloud web app (given by base URL)
-    def __init__(self, url):
-        self._url = url
+    def __init__(self):
+        self._url = None
         self._headers = {'content-type': 'application/json'}
+    def set_url(self, url):
+        self._url = url
+    def setUrl(self, url):
+        #copy of set_url method
+        self.set_url(url)
     def get_projects(self):
         #gets list of projects
         uri = '/cad/api/v0.1/projects'
@@ -15,6 +20,13 @@ class CCloud:
         else:
             return {'status_code':r.status_code, 'projects': None}
             #I'd rather not store all the projects not to consume too much memory (see below)
+    def getProjectNumbers(self):
+        #only a list of project numbers (without id's or anything)
+        projects = self.get_projects_list()
+        pList = []
+        for p in projects['projects']:
+            pList.append(p)
+        return pList
     def get_projects_list(self):
         #gets list of projects in format {'number':'id'}
         uri = '/cad/api/v0.1/projects_list'

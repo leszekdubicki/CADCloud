@@ -1,0 +1,154 @@
+'Written by Keith Rice
+'CADSharp LLC
+'www.cadsharp.com
+'Written in SolidWorks 2011
+
+'Creates a macro feature than runs another macro on rebuild.
+
+Dim swApp As SldWorks.SldWorks
+Dim swModel As SldWorks.ModelDoc2
+Dim swFeatMgr As SldWorks.FeatureManager
+Dim swFeat As Feature
+    
+Sub main()
+    Set swApp = Application.SldWorks
+    Set swModel = swApp.ActiveDoc
+    
+    Dim BaseName As String
+    Dim ProgId As String
+    Dim vMacroMethods As Variant
+    'parameters:
+    'Dim ParamNames As Object
+    'Dim ParamTypes As Object
+    'Dim ParamValues As Object
+    'below didn't work
+    'Dim ParamNames(1) As String
+    'Dim ParamTypes(1) As Variant
+    'Dim ParamValues(1) As String
+    'Dim DimTypes As Object
+    'Dim DimValues As Object
+    'Dim EditBodies As Object
+    'Dim ParamNames As Variant
+    'Dim ParamTypes As Variant
+    'Dim ParamValues As Variant
+    Dim paramNames, paramTypes, paramValues
+    
+    Dim paramNameArray(0 To 0) As String
+    Dim paramTypeArray(0 To 0) As Long
+    Dim paramValueArray(0 To 0) As String
+    paramNameArray(0) = "Hello"
+    paramTypeArray(0) = swMacroFeatureParamType_e.swMacroFeatureParamTypeString
+    paramValueArray(0) = "hehehe"
+    paramNames = paramNameArray
+    paramTypes = paramTypeArray
+    paramValues = paramValueArray
+    
+    
+    Dim IconFiles As Object
+    Dim options As Integer
+
+    Dim MacroMethods(8) As String
+    MacroMethods(0) = swApp.GetCurrentMacroPathName
+    MacroMethods(1) = "Feature_Module"
+    MacroMethods(2) = "swmRebuild"
+    MacroMethods(3) = swApp.GetCurrentMacroPathName
+    MacroMethods(4) = "Feature_Module"
+    MacroMethods(5) = "swmEditDefinition"
+    MacroMethods(6) = ""
+    MacroMethods(7) = ""
+    MacroMethods(8) = ""
+    
+    BaseName = "MacroFeatTest"
+    ProgId = ""
+    vMacroMethods = MacroMethods
+    'original declaration:
+    'Set ParamNames = Nothing
+    'Set ParamTypes = Nothing
+    'Set ParamValues = Nothing
+    'paramNames = Array("Hello")
+    'paramTypes = Array(swMacroFeatureParamType_e.swMacroFeatureParamTypeString)
+    'paramValues = Array("hehehe")
+    '____as an array lists:
+    'Set ParamNames = CreateObject("System.Collections.ArrayList")
+    'ParamNames.Add ("Hello")
+    'ParamNames.Add ("Hello2")
+    'Set ParamTypes = CreateObject("System.Collections.ArrayList")
+    'ParamTypes.Add (swMacroFeatureParamType_e.swMacroFeatureParamTypeString)
+    'ParamTypes.Add (swMacroFeatureParamType_e.swMacroFeatureParamTypeString)
+    'Set ParamValues = CreateObject("System.Collections.ArrayList")
+    'ParamValues.Add ("hehehe")
+    'ParamValues.Add ("heheheheheheheh")
+    '________________
+    'below didn't work (for variables set as an arrays)
+    'ParamNames(1) = "hehe"
+    'ParamTypes(1) = swMacroFeatureParamType_e.swMacroFeatureParamTypeString
+    'ParamValues(1) = "hehehehehe"
+    Set DimTypes = Nothing
+    Set DimValues = Nothing
+    Set EditBodies = Nothing
+    Set IconFiles = Nothing
+    options = swMacroFeatureOptions_e.swMacroFeatureEmbedMacroFile
+
+    Set swFeatMgr = swModel.FeatureManager
+    Set swFeat = swFeatMgr.InsertMacroFeature3(BaseName, ProgId, vMacroMethods, _
+        paramNames, paramTypes, paramValues, DimTypes, DimValues, EditBodies, _
+        IconFiles, options)
+End Sub
+
+
+
+'Written by Keith Rice
+'CADSharp LLC
+'www.cadsharp.com
+'Written in SolidWorks 2011
+
+'Creates a macro feature
+
+Dim swApp As SldWorks.SldWorks
+Dim Part As SldWorks.ModelDoc2
+Dim options As Long
+Dim errors As Long
+Dim retval As Long
+
+Function swmRebuild(App As Variant, model As Variant, feat As Variant) As Variant
+    Set swApp = App
+    Set swApp = Application.SldWorks
+    Set Part = swApp.ActiveDoc
+    Dim Eng As String
+    Eng = Part.GetTitle
+    Eng = Left(Eng, Len(Eng) - 10)
+    'retval = Part.getcustominfo("Station")
+    'retval = Part.AddCustomInfo("", "Station", 30, Station)
+    retval = Part.DeleteCustomInfo("fabricated_part_name")
+    retval = Part.AddCustomInfo3("", "fabricated_part_name", 30, Eng)
+    retval = Part.DeleteCustomInfo("filename_without_suffix")
+    retval = Part.AddCustomInfo3("", "filename_without_suffix", 30, Eng)
+End Function
+
+Function swmEditDefinition(varApp As Variant, varDoc As Variant, varFeat As Variant) As Variant
+    Dim App As SldWorks.SldWorks
+    Dim Doc As SldWorks.ModelDoc2
+    Dim feat As SldWorks.Feature
+    Dim FeatData As SldWorks.MacroFeatureData
+
+    Set App = varApp
+    Set Doc = varDoc
+    Set feat = varFeat
+    
+    Set FeatData = varFeat.GetDefinition
+    Dim N As Object
+    Dim T As Object
+    Dim V As Object
+    Dim Name As String
+    Dim pName As String
+    'FeatData.GetParameters N, T, V
+    FeatData.GetStringByName "Hello", Name
+    
+    'MsgBox FeatData.GetParameterCount
+    'MsgBox N(0)
+    MsgBox Name
+
+    varFeat.ModifyDefinition FeatData, varDoc, Nothing
+
+    EditDefinition = True
+End Function
