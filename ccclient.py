@@ -71,6 +71,13 @@ class CCloud:
         else:
             return {'status_code':r.status_code,'project':None}
 
+class CProject:
+    #class storing info about the project on client side
+    def __init__(self, dictionary):
+        #dictionary is what json returned
+        if 'project' in dictionary:
+            for key in dictionary['project']:
+                setattr(self, key, dictionary['project']['key'])
 class CCStore(CCloud):
     #class storing some values for the projects and list of projects
     def set_projects_list(self):
