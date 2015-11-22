@@ -11,6 +11,8 @@ class CCloud:
     def setUrl(self, url):
         #copy of set_url method
         self.set_url(url)
+    def getUrl(self):
+        return self._url
     def get_projects(self):
         #gets list of projects
         uri = '/cad/api/v0.1/projects'
@@ -43,7 +45,6 @@ class CCloud:
             return r.json()
         else:
             return {'status_code':r.status_code, 'numbers':None, 'strings':None, 'booleans':None}
-        
     def get_variable(self, project_id, variable_name):
         #gets one variable
         uri = '/cad/api/v0.1/get_variable/' + str(project_id) + '/' + str(variable_name)

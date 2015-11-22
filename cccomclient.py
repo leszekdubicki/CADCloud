@@ -12,7 +12,7 @@ class CCComClient(CCStore):
     _reg_clsid_ = ""
     _reg_desc_ = "Python Cad Cloud Client COM Server"
     _reg_progid_ = "Python.CadCloud"
-    _public_methods_ = ["getProjectNumbers", "setUrl"]
+    _public_methods_ = ["getProjectNumbers", "setUrl", "getUrl"]
     _public_attrs_ = []
     _readonly_attrs_ = []
     def __init__(self):
