@@ -13,6 +13,12 @@ def get_active(this, active):
         return ""
 
 
+#fucntion for going back anywhere:
+def redirect_url(default='start_page'):
+    return request.args.get('next') or \
+           request.referrer or \
+           url_for(default)
+
 #errorhandler...
 #from http://flask.pocoo.org/docs/0.10/patterns/apierrors/
 @app.errorhandler(InvalidUsage)
@@ -63,6 +69,7 @@ def get_projects_list():
             #P2 = Project.query.get(p.id)
             #dictionary to find project via by project number
             Pros[p.project_number] =  p.id
+        print Pros
         return jsonify({'projects':Pros})
     else:
         #redirect to regular projects list page
@@ -71,6 +78,7 @@ def get_projects_list():
 
 @app.route('/cad/api/v0.1/projects/<int:project_id>')
 def get_project(project_id):
+    #retrieves only the project with a given id and returns it's html or json representatoin
     project = Project.query.get(project_id)
     if request.headers['Content-Type'] == 'application/json':
         #get json object with project data:
@@ -149,6 +157,33 @@ def edit_project(project_id):
             return redirect(url_for('get_project', project_id = P.id))
         return render_template('new_project.html',form = form, active = '', get_active = get_active)
 
+#projects deleting:
+@app.route('/cad/api/v0.1/projects/delete/<int:project_id>', methods = ['GET', 'POST'])
+def delete_project(project_id):
+    if request.headers['Content-Type'] == 'application/json':
+        #get json object with project data:
+        P = Project.query.get(project_id)
+        VAR = request.json['project']
+        keys = ['name', 'project_number', 'description']
+        for k in keys:
+            if k in VAR  and not VAR[k] == P.name:
+                P.name = VAR[k]
+        db.session.commit()
+        return jsonify(VAR)
+    else:
+        #get project: 
+        P = Project.query.get(project_id)
+        form = ConfirmDeleteForm()
+        if request.method == 'POST':
+            if 'cancel_button' in request.form:
+                return form.redirect('start_page')
+            elif 'submit_button' in request.form:
+                #delete the project:
+                db.session.delete(P)
+                db.session.commit()
+                return form.redirect('start_page')
+        else:
+            return render_template('confirm_delete_project.html',project = P, form = form, active = '', get_active = get_active)
 #creation of a variable
 @app.route('/cad/api/v0.1/variables/add/<int:project_id>', methods = ['GET','POST'])
 def add_variable(project_id):
@@ -253,6 +288,40 @@ def edit_variable(project_id, variable_type, variable_id):
             db.session.commit()
             return redirect(url_for('get_project', project_id = project_id))
         return render_template('new_variable.html', project = P, form = form, active = '', get_active = get_active)
+
+#delete variable:
+@app.route('/cad/api/v0.1/variables/delete/<int:project_id>/<string:variable_type>/<int:variable_id>', methods = ['GET', 'POST'])
+def delete_variable(project_id, variable_type, variable_id):
+    if request.headers['Content-Type'] == 'application/json':
+        #get json object with project data:
+        P = Project.query.get(project_id)
+        VAR = request.json['project']
+        keys = ['name', 'project_number', 'description']
+        for k in keys:
+            if k in VAR  and not VAR[k] == P.name:
+                P.name = VAR[k]
+        db.session.commit()
+        return jsonify(VAR)
+    else:
+        #get project: 
+        P = Project.query.get(project_id)
+        if variable_type == 'string':
+            v = String.query.get(variable_id)
+        elif variable_type == 'number':
+            v = Number.query.get(variable_id)
+        elif variable_type == 'boolean':
+            v = Boolean.query.get(variable_id)
+        form = ConfirmDeleteForm()
+        if request.method == 'POST':
+            if 'cancel_button' in request.form:
+                return form.redirect('start_page')
+            elif 'submit_button' in request.form:
+                #delete the project:
+                db.session.delete(v)
+                db.session.commit()
+                return form.redirect('start_page')
+        else:
+            return render_template('confirm_delete_variable.html', project = P, variable = v, form = form, active = '', get_active = get_active)
 
 #editing a variable by name:
 @app.route('/cad/api/v0.1/variables/edit/<int:project_id>/<string:variable_name>', methods = ['GET', 'PUT', 'POST'])

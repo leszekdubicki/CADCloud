@@ -8,7 +8,7 @@
         {% for h in headers %}
           <th>{{h[1]}}</th>
         {% endfor %}
-        <th></th>
+        <th colspan=2></th>
       </tr>
     </thead>
     <tbody>
@@ -17,11 +17,11 @@
         {% for h in headers %}
           <td>{{projects[pid][h[0]]}}</td>
         {% endfor %}
-        <td><a href="{{url_for("get_project",project_id=pid)}}">Show</a></td>
         <td>
-            {%for s in projects[pid].strings%}
-                <p>{{s}}</p>
-            {%endfor%}
+            <a href="{{url_for("get_project",project_id=pid)}}">Show</a> 
+        </td>
+        <td>
+            <a href="{{url_for("delete_project",project_id=pid)}}">Delete</a>
         </td>
       </tr>
       {% endfor %}

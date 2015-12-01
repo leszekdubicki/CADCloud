@@ -13,6 +13,7 @@ from flask_bootstrap import Bootstrap
 from wtforms import TextField, TextAreaField, HiddenField, ValidationError, RadioField,\
     BooleanField, SubmitField, IntegerField, FormField, validators, SelectField
 from wtforms.validators import Required
+from urlparse import urlparse, urljoin
 
 basedir = os.path.abspath(os.path.dirname(__file__))
 db_path = os.path.join(basedir, '../ccdata.sqlite')
@@ -45,6 +46,7 @@ def dict_model(model):
             M[key] = model.__dict__[key]
     return M
             
+
 #errorhandler...
 #from http://flask.pocoo.org/docs/0.10/patterns/apierrors/
 class InvalidUsage(Exception):
@@ -244,6 +246,37 @@ class VariableAddForm(VariableEditForm):
     #vType = TextField('Project Number', description='Number of the project', validators=[Required()])
     submit_button = SubmitField('Create Variable')
 
+#function to go back:
+def is_safe_url(target):
+    ref_url = urlparse(request.host_url)
+    test_url = urlparse(urljoin(request.host_url, target))
+    return test_url.scheme in ('http', 'https') and \
+           ref_url.netloc == test_url.netloc
+
+
+def get_redirect_target():
+    for target in request.args.get('next'), request.referrer:
+        if not target:
+            continue
+        if is_safe_url(target):
+            return target 
+
+
+#delete confirmation form:
+
+class ConfirmDeleteForm(Form):
+    submit_button = SubmitField('Delete')
+    cancel_button = SubmitField('Cancel')
+    next = HiddenField()
+    def __init__(self, *args, **kwargs):
+        Form.__init__(self, *args, **kwargs)
+        if not self.next.data:
+            self.next.data = get_redirect_target() or ''
+    def redirect(self, endpoint='index', **values):
+        if is_safe_url(self.next.data):
+            return redirect(self.next.data)
+        target = get_redirect_target()
+        return redirect(target or url_for(endpoint, **values))
     
 if __name__ == '__main__':
     manager.run()
