@@ -11,7 +11,7 @@ class CCComClient(CCStore):
     _reg_clsid_ = ""
     _reg_desc_ = "Python Cad Cloud Client COM Server"
     _reg_progid_ = "Python.CadCloud"
-    _public_methods_ = ["getProjectNumbers", "setUrl", "getUrl", "getprojectbynumber", "getvariable"]
+    _public_methods_ = ["getProjectNumbers", "setUrl", "getUrl", "getprojectbynumber", "getvariable", "get_variable"]
     _public_attrs_ = []
     _readonly_attrs_ = []
     def __init__(self):
@@ -25,7 +25,7 @@ class CCComClient(CCStore):
         #project = {'project':{'id':9, 'project_number':'cykkk', 'name':'pykkk', 'description':'hehehehe'}}
         projectList = []
         if 'status_code' in project and project['status_code'] >= 300:
-            return None
+            projectList.append('project_not_found')
         elif ('project' in project) and (not project['project'] == None):
             #building a list of project data:
             p = project['project']
@@ -33,25 +33,36 @@ class CCComClient(CCStore):
             projectList.append(p['project_number'])
             projectList.append(p['name'])
             projectList.append(p['description'])
-            return projectList
+            #change all None values to empty strings since vba has problem with them:
+            for i in range(0, len(projectList)-1):
+                if projectList[i] == None:
+                    projectList[i] = ""
         else:
-            return None
-    def getvariable(self, project_id, variable_name):
+            projectList.append('project_not_found')
+        return projectList
+    def get_variable(self, project_id, variable_name):
         #retrieve variable, but instead of dictionary return list (which will be accesible as variant array in VBA)
         var = CCStore.get_variable(self, project_id, variable_name)
         #test dictionary similar to the one that should be returned:
         #project = {'project':{'id':9, 'project_number':'cykkk', 'name':'pykkk', 'description':'hehehehe'}}
         variableList = []
-        if variable_name in var and not var[variable_name] == None:
-            #building a list of project data:
-            v = var['variable']
-            variableList.append(p['id'])
-            variableList.append(p['name'])
-            variableList.append(p['value'])
-            variableList.append(p['comment'])
+        if (variable_name in var) and (not var[variable_name] == None) and ('available' in var[variable_name]) and (var[variable_name]['available'] == 'yes'):
+            #building a list of variable data:
+            v = var[variable_name]
+            variableList.append(v['id'])
+            variableList.append(v['name'])
+            variableList.append(v['value'])
+            if v['type'] == 'string':
+                variableList.append(0)
+            elif v['type'] == 'number':
+                variableList.append(1)
+            elif v['type'] == 'boolean':
+                variableList.append(2)
+            variableList.append(v['comment'])
             return variableList
         else:
-            return None
+            #return empty list/array
+            return []
 
 def guid():
     if os.path.isfile(fName):
