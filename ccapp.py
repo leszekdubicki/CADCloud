@@ -45,7 +45,6 @@ def dict_model(model):
         if not key in keysToRem: 
             M[key] = model.__dict__[key]
     return M
-            
 
 #errorhandler...
 #from http://flask.pocoo.org/docs/0.10/patterns/apierrors/
@@ -216,11 +215,6 @@ class VariableEditForm(Form):
         rv = Form.validate(self)
         if not rv:
             return False
-        #check if variable with the same name already exists:
-        var = findVariable(self.projectId, self.name.data)
-        if not var == None:
-            self.name.errors.append('Variable with this name already exists within this project!')
-            return False
         if not self.vType == None:
             typ = self.vType.data.lower()
         else:
@@ -245,6 +239,33 @@ class VariableAddForm(VariableEditForm):
     vType = SelectField('Variable Type', description='Type of the variable',validators=[Required()], choices = [('string','String'),('numeric','Numeric'),('boolean','Boolean')])
     #vType = TextField('Project Number', description='Number of the project', validators=[Required()])
     submit_button = SubmitField('Create Variable')
+    def validate(self):
+        rv = Form.validate(self)
+        if not rv:
+            return False
+        #check if variable with the same name already exists:
+        var = findVariable(self.projectId, self.name.data)
+        if not var == None:
+            self.name.errors.append('Variable with this name already exists within this project!')
+            return False
+        if not self.vType == None:
+            typ = self.vType.data.lower()
+        else:
+            typ = None
+        if typ == 'number':
+            #just check if value can be converted:
+            try:
+                float(self.value.data)
+            except:
+                self.value.errors.append('Must be a number if variable type is number')
+                return False
+        elif typ == 'boolean':
+            #just check if value can be converted:
+            if self.value.data not in ['1', '0', 'True', 'False', 'true', 'false']:
+                self.value.errors.append('Must be logic value if variable type is boolean')
+                return False
+        #return true if there are no errors
+        return True
 
 #function to go back:
 def is_safe_url(target):

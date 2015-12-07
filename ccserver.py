@@ -31,7 +31,8 @@ def handle_invalid_usage(error):
 @app.route('/')
 def start_page():
     if request.headers['Content-Type'] == 'application/json':
-        return jsonify(request.headers)
+        #basically do nothing - just let know that it's up:
+        return jsonify({'cadcloud':'up'})
     else:
         return render_template('index.html', title="CADCloud", active = 'home', get_active = get_active)
 
@@ -91,15 +92,9 @@ def get_project(project_id):
 #same but get project by number. There shouldn't be two projects with the same number, newertheless app will return the first project with given number
 @app.route('/cad/api/v0.1/projects_by_num/<string:project_number>')
 def get_project_by_number(project_number):
+    #get first project (there should not be more than one:
     project = Project.query.filter_by(project_number = project_number).first()
-    """
-    if request.headers['Content-Type'] == 'application/json':
-        #get json object with project data:
-        VAR = request.json
-        return jsonify(VAR)
-    else:
-        return render_template('show_project.html',project = project, active = '', get_active = get_active)
-    """
+    #redirect to standard get project by id route:
     return redirect(url_for('get_project', project_id = project.id))
 
 
@@ -164,12 +159,11 @@ def delete_project(project_id):
         #get json object with project data:
         P = Project.query.get(project_id)
         VAR = request.json['project']
-        keys = ['name', 'project_number', 'description']
-        for k in keys:
-            if k in VAR  and not VAR[k] == P.name:
-                P.name = VAR[k]
-        db.session.commit()
-        return jsonify(VAR)
+        if 'confirm_delete' in VAR:
+            VAR['deleted'] = True
+            db.session.delete(P)
+            db.session.commit()
+        return jsonify({'project':VAR})
     else:
         #get project: 
         P = Project.query.get(project_id)
@@ -184,6 +178,7 @@ def delete_project(project_id):
                 return form.redirect('start_page')
         else:
             return render_template('confirm_delete_project.html',project = P, form = form, active = '', get_active = get_active)
+
 #creation of a variable
 @app.route('/cad/api/v0.1/variables/add/<int:project_id>', methods = ['GET','POST'])
 def add_variable(project_id):
@@ -292,25 +287,25 @@ def edit_variable(project_id, variable_type, variable_id):
 #delete variable:
 @app.route('/cad/api/v0.1/variables/delete/<int:project_id>/<string:variable_type>/<int:variable_id>', methods = ['GET', 'POST'])
 def delete_variable(project_id, variable_type, variable_id):
-    if request.headers['Content-Type'] == 'application/json':
+    #get database objects:
+    P = Project.query.get(project_id)
+    if variable_type == 'string':
+        v = String.query.get(variable_id)
+    elif variable_type == 'number':
+        v = Number.query.get(variable_id)
+    elif variable_type == 'boolean':
+        v = Boolean.query.get(variable_id)
+    if (request.headers['Content-Type'] == 'application/json') and (request.method.lower() == 'delete'):
         #get json object with project data:
-        P = Project.query.get(project_id)
-        VAR = request.json['project']
-        keys = ['name', 'project_number', 'description']
-        for k in keys:
-            if k in VAR  and not VAR[k] == P.name:
-                P.name = VAR[k]
-        db.session.commit()
-        return jsonify(VAR)
+        if v['name'] in request.json:
+            VAR = request.json[v['name']]
+        if 'confirm_delete' in VAR:
+            db.session.delete(v)
+            db.session.commit()
+            VAR['deleted'] = True
+        return jsonify({v['name']:VAR})
     else:
         #get project: 
-        P = Project.query.get(project_id)
-        if variable_type == 'string':
-            v = String.query.get(variable_id)
-        elif variable_type == 'number':
-            v = Number.query.get(variable_id)
-        elif variable_type == 'boolean':
-            v = Boolean.query.get(variable_id)
         form = ConfirmDeleteForm()
         if request.method == 'POST':
             if 'cancel_button' in request.form:
@@ -363,15 +358,24 @@ def get_variables(project_id):
 @app.route('/cad/api/v0.1/get_variable/<int:project_id>/<string:var_name>', methods = ['GET'])
 def get_var(project_id, var_name):
     V = Number.query.filter_by(project_id = project_id, name = var_name)
+    if not V.count() == 0:
+        variable = dict_model(V.first())
+        variable['type'] = 'number'
     if V.count() == 0:
         V = String.query.filter_by(project_id = project_id, name = var_name)
+        variable = dict_model(V.first())
+        variable['type'] = 'string'
     if V.count() == 0:
         V = Boolean.query.filter_by(project_id = project_id, name = var_name)
+        variable = dict_model(V.first())
+        variable['type'] = 'boolean'
     if not V.count() == 0:
-        variable = V.first().__dict__
-    if '_sa_instance_state' in variable:
-        variable.__delitem__('_sa_instance_state')
-    return jsonify({var_name:variable})
+        variable['available'] = 'yes'
+        if '_sa_instance_state' in variable:
+            variable.__delitem__('_sa_instance_state')
+        return jsonify({var_name:variable})
+    else:
+        return jsonify({var_name:{'available':'no'}})
 
 
 #______________________________________________________________________________________________________
