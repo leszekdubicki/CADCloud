@@ -1,6 +1,8 @@
-#CADCloud application for sharing enginering info between CAD apps
-#Leszek Dubicki
-#student number: x14125439
+#ccserver.py - web application file containing definitions of all entry points for CADCloud application for sharing enginering info between CAD apps
+#@author:    Leszek Dubicki
+#studentID:  x14125439
+#email:  leszek.dubicki@student.ncirl.ie
+#@date: 08/12/2015
 
 from ccapp import *
 

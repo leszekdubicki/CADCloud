@@ -1,6 +1,9 @@
-#CADCloud application for sharing enginering info between CAD apps
-#Leszek Dubicki
-#student number: x14125439
+#ccapp.py - base file for CADCloud application for sharing enginering info between CAD apps
+#@author:    Leszek Dubicki
+#studentID:  x14125439
+#email:  leszek.dubicki@student.ncirl.ie
+#@date: 08/12/2015
+
 
 
 import os
@@ -176,10 +179,14 @@ def findVariable(projectId, varName):
             return variables[0]
 #
 ##forms definitions:
-class ProjectAddForm(Form):
+class ProjectEditForm(Form):
     name = TextField('Project Name', description='Enter Name of the project here',validators=[Required()])
-    project_number = TextField('Project Number', description='Number of the project', validators=[Required()])
     description = TextAreaField(u'Project Description', [validators.optional(), validators.length(max=200)])
+    submit_button = SubmitField('Update Project')
+
+
+class ProjectAddForm(ProjectEditForm):
+    project_number = TextField('Project Number', description='Number of the project', validators=[Required()])
     submit_button = SubmitField('Create Project')
     def validate(self):
         rv = Form.validate(self)
@@ -193,8 +200,6 @@ class ProjectAddForm(Form):
             self.project_number.errors.append('Project with given number already exists!')
             
 
-class ProjectEditForm(ProjectAddForm):
-    submit_button = SubmitField('Update Project')
 
 class VariableEditForm(Form):
     name = TextField('Variable Name', description='Name of the variable',validators=[Required()])
