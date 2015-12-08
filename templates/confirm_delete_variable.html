@@ -1,0 +1,36 @@
+{#delete variable confirmation html template of  CADCloud application
+@author:    Leszek Dubicki
+#studentID:  x14125439
+#email:  leszek.dubicki@student.ncirl.ie
+#@date: 08/12/2015#}
+{% extends "show_bare_project.html" %}
+{% import "bootstrap/wtf.html" as wtf %}
+{% import "bootstrap/fixes.html" as fixes %}
+{% import "bootstrap/utils.html" as util %}
+
+  {% block variables %}
+    <div class="container col-md-7">
+  <h2>Are you sure you want to delete the following variable:</h2>
+  <table class="table table-bordered">
+  <tbody>
+    <tr>
+        <td class="col-md-2">Variable Name:</td>
+        <td>{{variable.name}}</td>
+    </tr>
+    <tr>
+        <td class="col-md-2">Variable Value:</td>
+        <td>{{variable.value}}</td>
+    </tr>
+    <tr>
+        <td class="col-md-2">Variable Comment:</td>
+        <td>{%if variable.comment == None%}
+                No comment assigned to variable.
+        {%else%}
+              {{variable.comment}}
+        {%endif%}</td>
+    </tr>
+  </tbody>
+  </table>
+        {{ wtf.quick_form(form, form_type='horizontal', button_map={'cancel_button': 'primary'}) }}
+    </div>
+  {% endblock %}

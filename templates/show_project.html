@@ -1,3 +1,8 @@
+{#detailed project information listing html template of  CADCloud application
+@author:    Leszek Dubicki
+#studentID:  x14125439
+#email:  leszek.dubicki@student.ncirl.ie
+#@date: 08/12/2015#}
 {% extends "show_bare_project.html" %}
 {% import "bootstrap/wtf.html" as wtf %}
 {% import "bootstrap/fixes.html" as fixes %}
@@ -13,7 +18,7 @@
         <th class="col-md-2">Type:</th>
         <th class="col-md-2">Value:</th>
         <th class="col-md-2">Comment:</th>
-        <th class="col-md-3"></th>
+        <th class="col-md-3" colspan=2></th>
       </tr>
     </thead>
     <tbody>
@@ -24,6 +29,7 @@
             <td>{{s.value}}</td>
             <td>{{s.comment}}</td>
             <td><a href = {{url_for("edit_variable",project_id = project.id, variable_type = 'string', variable_id = s.id)}}>Edit</a></td>
+            <td><a href = {{url_for("delete_variable",project_id = project.id, variable_type = 'string', variable_id = s.id)}}>Delete</a></td>
         </tr>
     {% endfor %}
     {% for s in project.numbers %}
@@ -32,7 +38,8 @@
             <td>Number</td>
             <td>{{s.value}}</td>
             <td>{{s.comment}}</td>
-            <td><a href = {{url_for("edit_variable",project_id = project.id, variable_type = 'string', variable_id = s.id)}}>Edit</a></td>
+            <td><a href = {{url_for("edit_variable",project_id = project.id, variable_type = 'number', variable_id = s.id)}}>Edit</a></td>
+            <td><a href = {{url_for("delete_variable",project_id = project.id, variable_type = 'number', variable_id = s.id)}}>Delete</a></td>
         </tr>
     {% endfor %}
     {% for s in project.booleans %}
@@ -41,7 +48,8 @@
             <td>Boolean</td>
             <td>{{s.value}}</td>
             <td>{{s.comment}}</td>
-            <td><a href = {{url_for("edit_variable",project_id = project.id, variable_type = 'string', variable_id = s.id)}}>Edit</a></td>
+            <td><a href = {{url_for("edit_variable",project_id = project.id, variable_type = 'boolean', variable_id = s.id)}}>Edit</a></td>
+            <td><a href = {{url_for("delete_variable",project_id = project.id, variable_type = 'boolean', variable_id = s.id)}}>Delete</a></td>
         </tr>
     {% endfor %}
   </tbody>

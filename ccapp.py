@@ -1,6 +1,9 @@
-#CADCloud application for sharing enginering info between CAD apps
-#Leszek Dubicki
-#student number: x14125439
+#ccapp.py - base file for CADCloud application for sharing enginering info between CAD apps
+#@author:    Leszek Dubicki
+#studentID:  x14125439
+#email:  leszek.dubicki@student.ncirl.ie
+#@date: 08/12/2015
+
 
 
 import os
@@ -13,6 +16,7 @@ from flask_bootstrap import Bootstrap
 from wtforms import TextField, TextAreaField, HiddenField, ValidationError, RadioField,\
     BooleanField, SubmitField, IntegerField, FormField, validators, SelectField
 from wtforms.validators import Required
+from urlparse import urlparse, urljoin
 
 basedir = os.path.abspath(os.path.dirname(__file__))
 db_path = os.path.join(basedir, '../ccdata.sqlite')
@@ -44,7 +48,7 @@ def dict_model(model):
         if not key in keysToRem: 
             M[key] = model.__dict__[key]
     return M
-            
+
 #errorhandler...
 #from http://flask.pocoo.org/docs/0.10/patterns/apierrors/
 class InvalidUsage(Exception):
@@ -175,10 +179,14 @@ def findVariable(projectId, varName):
             return variables[0]
 #
 ##forms definitions:
-class ProjectAddForm(Form):
+class ProjectEditForm(Form):
     name = TextField('Project Name', description='Enter Name of the project here',validators=[Required()])
-    project_number = TextField('Project Number', description='Number of the project', validators=[Required()])
     description = TextAreaField(u'Project Description', [validators.optional(), validators.length(max=200)])
+    submit_button = SubmitField('Update Project')
+
+
+class ProjectAddForm(ProjectEditForm):
+    project_number = TextField('Project Number', description='Number of the project', validators=[Required()])
     submit_button = SubmitField('Create Project')
     def validate(self):
         rv = Form.validate(self)
@@ -192,8 +200,6 @@ class ProjectAddForm(Form):
             self.project_number.errors.append('Project with given number already exists!')
             
 
-class ProjectEditForm(ProjectAddForm):
-    submit_button = SubmitField('Update Project')
 
 class VariableEditForm(Form):
     name = TextField('Variable Name', description='Name of the variable',validators=[Required()])
@@ -210,6 +216,34 @@ class VariableEditForm(Form):
             return self.varType
         else:
             return self.vType.data
+    def validate(self):
+        rv = Form.validate(self)
+        if not rv:
+            return False
+        if not self.vType == None:
+            typ = self.vType.data.lower()
+        else:
+            typ = None
+        if typ == 'number':
+            #just check if value can be converted:
+            try:
+                float(self.value.data)
+            except:
+                self.value.errors.append('Must be a number if variable type is number')
+                return False
+        elif typ == 'boolean':
+            #just check if value can be converted:
+            if self.value.data not in ['1', '0', 'True', 'False', 'true', 'false']:
+                self.value.errors.append('Must be logic value if variable type is boolean')
+                return False
+        #return true if there are no errors
+        return True
+
+class VariableAddForm(VariableEditForm):
+    #http://wtforms.simplecodes.com/docs/0.6.1/fields.html#wtforms.fields.SelectField
+    vType = SelectField('Variable Type', description='Type of the variable',validators=[Required()], choices = [('string','String'),('numeric','Numeric'),('boolean','Boolean')])
+    #vType = TextField('Project Number', description='Number of the project', validators=[Required()])
+    submit_button = SubmitField('Create Variable')
     def validate(self):
         rv = Form.validate(self)
         if not rv:
@@ -238,12 +272,37 @@ class VariableEditForm(Form):
         #return true if there are no errors
         return True
 
-class VariableAddForm(VariableEditForm):
-    #http://wtforms.simplecodes.com/docs/0.6.1/fields.html#wtforms.fields.SelectField
-    vType = SelectField('Variable Type', description='Type of the variable',validators=[Required()], choices = [('string','String'),('numeric','Numeric'),('boolean','Boolean')])
-    #vType = TextField('Project Number', description='Number of the project', validators=[Required()])
-    submit_button = SubmitField('Create Variable')
+#function to go back:
+def is_safe_url(target):
+    ref_url = urlparse(request.host_url)
+    test_url = urlparse(urljoin(request.host_url, target))
+    return test_url.scheme in ('http', 'https') and \
+           ref_url.netloc == test_url.netloc
 
+
+def get_redirect_target():
+    for target in request.args.get('next'), request.referrer:
+        if not target:
+            continue
+        if is_safe_url(target):
+            return target 
+
+
+#delete confirmation form:
+
+class ConfirmDeleteForm(Form):
+    submit_button = SubmitField('Delete')
+    cancel_button = SubmitField('Cancel')
+    next = HiddenField()
+    def __init__(self, *args, **kwargs):
+        Form.__init__(self, *args, **kwargs)
+        if not self.next.data:
+            self.next.data = get_redirect_target() or ''
+    def redirect(self, endpoint='index', **values):
+        if is_safe_url(self.next.data):
+            return redirect(self.next.data)
+        target = get_redirect_target()
+        return redirect(target or url_for(endpoint, **values))
     
 if __name__ == '__main__':
     manager.run()

@@ -1,4 +1,4 @@
-{#base project information listing html template of  CADCloud application
+{#delete project confirmation html template of  CADCloud application
 @author:    Leszek Dubicki
 #studentID:  x14125439
 #email:  leszek.dubicki@student.ncirl.ie
@@ -10,7 +10,7 @@
 
 {% block content %}
   <div class="container col-md-7">
-  <h2>Project Record:</h2>
+  <h2>Are you sure you want to delete the following project:</h2>
   <table class="table table-bordered">
   <tbody>
     <tr>
@@ -31,9 +31,8 @@
     </tr>
   </tbody>
   </table>
-  <a href="{{url_for("edit_project", project_id = project.id)}}" class="btn btn-default" role="button">Edit</a>
-  <a href="{{url_for("delete_project", project_id = project.id)}}" class="btn btn-default" role="button">Delete</a>
+  {{ wtf.quick_form(form, form_type='horizontal', button_map={'cancel_button': 'primary'}) }}
+  {#<a href="{{url_for("delete_project", project_id = project.id)}}"  method="post" class="btn btn-default" role="button">Delete</a>
+  <a href="{{redirect_url}}" class="btn btn-default" role="button">Cancel</a>#}
   </div>
-  {% block variables %}
-  {% endblock %}
 {% endblock %}
