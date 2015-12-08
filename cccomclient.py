@@ -1,13 +1,20 @@
-#import ccclient, os.path, pythoncom
+#cccomclient.py - client app with definition of CClient COM component that provides COM interface to connect to ccloud server app
+#@author:    Leszek Dubicki
+#studentID:  x14125439
+#email:  leszek.dubicki@student.ncirl.ie
+#@date: 08/12/2015
 import pythoncom, os.path
 import ccclient
 from ccclient import CCStore
 
+#filename with machine-specific config (for now only _reg_clsid_ is written there)
 fName = '.ccguidfile.txt'
 
-class CCComClient(CCStore):
-    #_reg_clsid_ = "{E51C6BDA-7811-45B3-B962-AADDBDF0E2C3}"
-    #_reg_clsid_ = guid()
+class CCComClient(CCloud):
+    #below clsid definition was turned off since it's machine specific, 
+    #example _reg_clsid_ = "{E51C6BDA-7811-45B3-B962-AADDBDF0E2C3}"
+    #_reg_clsid_ can be generated with pythoncom.CreateGuid()
+    #in this case it's either generated using above or taken from file writen in variable fName (see above)
     _reg_clsid_ = ""
     _reg_desc_ = "Python Cad Cloud Client COM Server"
     _reg_progid_ = "Python.CadCloud"
@@ -16,7 +23,6 @@ class CCComClient(CCStore):
     _readonly_attrs_ = []
     def __init__(self):
         CCStore.__init__(self)
-    #def get_project_by_number(self, project_number):
     def getprojectbynumber(self, project_number):
         #retrieve project, but instead of dictionary return list (which will be accesible as variant array in VBA)
         project = CCStore.get_project_by_number(self, project_number)

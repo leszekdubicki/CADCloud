@@ -1,4 +1,8 @@
-#client app to connect to ccloud server app
+#ccclient.py - client app to connect to ccloud server app
+#@author:    Leszek Dubicki
+#studentID:  x14125439
+#email:  leszek.dubicki@ student.ncirl.ie
+#@date: 08/12/2015
 import requests
 
 class CCloud:
