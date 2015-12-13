@@ -221,18 +221,22 @@ def add_variable(project_id):
                 db.session.add(v)
                 db.session.commit()
                 VAR = dict_model(String.query.filter_by(name=VAR['name'], project_id = project_id).first())
-        elif 'type' in VAR and VAR['type'] == 'number':
-                if 'name' in VAR and 'value' in VAR:
-                    if not 'comment' in VAR:
-                        VAR['comment'] == ''
-                    if not 'unit' in VAR:
-                        VAR['unit'] == ''
-                    v = Number(VAR['name'],VAR['value'], project_id, VAR['comment'], unit = VAR['unit'])
-        elif 'type' in VAR and VAR['type'] == 'boolean':
-                if 'name' in VAR and 'value' in VAR:
-                    if not 'comment' in VAR:
-                        VAR['comment'] == ''
-                    v = Boolean(VAR['name'],VAR['value'], project_id, VAR['comment'])
+        elif ('type' in VAR) and (VAR['type'] == 'number'):
+                if not 'comment' in VAR:
+                    VAR['comment'] = ''
+                if not 'unit' in VAR:
+                    VAR['unit'] = ''
+                v = Number(VAR['name'],VAR['value'], project_id, VAR['comment'], unit = VAR['unit'])
+                db.session.add(v)
+                db.session.commit()
+                VAR = dict_model(Number.query.filter_by(name=VAR['name'], project_id = project_id).first())
+        elif ('type' in VAR) and (VAR['type'] == 'boolean'):
+                if not 'comment' in VAR:
+                    VAR['comment'] = ''
+                v = Boolean(VAR['name'],VAR['value'], project_id, VAR['comment'])
+                db.session.add(v)
+                db.session.commit()
+                VAR = dict_model(Boolean.query.filter_by(name=VAR['name'], project_id = project_id).first())
         return jsonify({'variable':VAR})
     else:
         P = Project.query.get(project_id)
