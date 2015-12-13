@@ -17,6 +17,7 @@ from wtforms import TextField, TextAreaField, HiddenField, ValidationError, Radi
     BooleanField, SubmitField, IntegerField, FormField, validators, SelectField
 from wtforms.validators import Required
 from urlparse import urlparse, urljoin
+from flask.ext.api import status
 
 basedir = os.path.abspath(os.path.dirname(__file__))
 db_path = os.path.join(basedir, '../ccdata.sqlite')
