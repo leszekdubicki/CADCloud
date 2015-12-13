@@ -242,23 +242,25 @@ def edit_variable(project_id, variable_type, variable_id):
     #type of variable must be worked out from the request:
     variable_type = variable_type.lower()
     if request.headers['Content-Type'] == 'application/json':
-        P = Project.query.get(project_id)
-        VAR = request.json['variable']
         if variable_type == 'string':
             v = String.query.get(variable_id)
         elif variable_type == 'number':
             v = Number.query.get(variable_id)
         elif variable_type == 'boolean':
             v = Boolean.query.get(variable_id)
-        #get json object:
-        if not VAR['name'] == v.name:
-            v.name = VAR['name']
-        if not VAR['value'] == v.value:
-            v.value = VAR['value']
-        if not VAR['comment'] == v.comment:
-            v.comment = VAR['comment']
-        db.session.commit()
-        return jsonify({'variable':VAR})
+        if not v == None:
+            #get json object:
+            VAR = request.json['variable']
+            if not VAR['name'] == v.name:
+                v.name = VAR['name']
+            if not VAR['value'] == v.value:
+                v.value = VAR['value']
+            if not VAR['comment'] == v.comment:
+                v.comment = VAR['comment']
+            db.session.commit()
+            return jsonify({'variable':VAR})
+        else:
+            return jsonify({'variable':None})
     else:
         #regular html request
         P = Project.query.get(project_id)

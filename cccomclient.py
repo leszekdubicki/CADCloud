@@ -5,7 +5,7 @@
 #@date: 08/12/2015
 import pythoncom, os.path
 import ccclient
-from ccclient import CCStore
+from ccclient import CCloud
 
 #filename with machine-specific config (for now only _reg_clsid_ is written there)
 fName = '.ccguidfile.txt'
@@ -22,10 +22,10 @@ class CCComClient(CCloud):
     _public_attrs_ = []
     _readonly_attrs_ = []
     def __init__(self):
-        CCStore.__init__(self)
+        CCloud.__init__(self)
     def getprojectbynumber(self, project_number):
         #retrieve project, but instead of dictionary return list (which will be accesible as variant array in VBA)
-        project = CCStore.get_project_by_number(self, project_number)
+        project = CCloud.get_project_by_number(self, project_number)
         #project = {}
         #test dictionary similar to the one that should be returned:
         #project = {'project':{'id':9, 'project_number':'cykkk', 'name':'pykkk', 'description':'hehehehe'}}
@@ -48,7 +48,7 @@ class CCComClient(CCloud):
         return projectList
     def get_variable(self, project_id, variable_name):
         #retrieve variable, but instead of dictionary return list (which will be accesible as variant array in VBA)
-        var = CCStore.get_variable(self, project_id, variable_name)
+        var = CCloud.get_variable(self, project_id, variable_name)
         #test dictionary similar to the one that should be returned:
         #project = {'project':{'id':9, 'project_number':'cykkk', 'name':'pykkk', 'description':'hehehehe'}}
         variableList = []
