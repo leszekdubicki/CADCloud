@@ -18,7 +18,7 @@ class CCComClient(CCloud):
     _reg_clsid_ = ""
     _reg_desc_ = "Python Cad Cloud Client COM Server"
     _reg_progid_ = "Python.CadCloud"
-    _public_methods_ = ["getProjectNumbers", "setUrl", "getUrl", "getprojectbynumber", "getvariable", "get_variable"]
+    _public_methods_ = ["getProjectNumbers", "setUrl", "getUrl", "getprojectbynumber", "getvariable", "get_variable", "set_variable"]
     _public_attrs_ = []
     _readonly_attrs_ = []
     def __init__(self):
@@ -69,6 +69,16 @@ class CCComClient(CCloud):
         else:
             #return empty list/array
             return []
+    def set_variable(self, project_id, variable_data):
+        #send variable to the server...
+        #only the variable is array / list got from VBA or sth similar...
+        #'ccserver will take array with the following data:
+        #'[variable_id, variable_name, variable_value, variable_type, variable_comment]
+        #[name, value, type]
+        properVariableData = {"name":variable_data[1], "value":variable_data[2], "type":variable_data[3] , "comment":variable_data[4]}
+        CCloud.set_variable(self, project_id, properVariableData)
+        return True
+
 
 def guid():
     if os.path.isfile(fName):

@@ -92,6 +92,7 @@ class CCloud:
 
     def set_variable(self, project_id, variable_data):
         #sends variable data to the server
+        #print variable_data
         if (not 'name' in variable_data):
             return {'status_code':1405, 'variable':None}
         else:

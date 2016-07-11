@@ -106,11 +106,23 @@ def add_project():
     if request.headers['Content-Type'] == 'application/json' and request.method.lower() == 'post':
         #get json object with project data:
         VAR = request.json['project']
-        if True:#there must be validators here
+        if ('name' in VAR)  and ('project_number' in VAR):#there must be validators here
+            #check if project with given no exists:
+            projects = Project.query.filter_by(project_number = VAR['project_number'])
+            if projects.count() > 0:
+                #project exists, return error
+                return jsonify({'project':None, 'status':'exists'}), status.HTTP_406_NOT_ACCEPTABLE
+            if not "description" in VAR:
+                VAR["description"] = ""
             p = Project(VAR['name'], VAR['project_number'], VAR['description'])
             db.session.add(p)
             db.session.commit()
-        return jsonify(VAR)
+            #get full model (with id)
+            p = Project.query.filter_by(project_number = VAR['project_number']).first()
+            VAR = dict_model(p)
+            return jsonify({'project':VAR, 'status':'success'}), status.HTTP_201_CREATED
+        else:
+            return jsonify({'project':None, 'status':'failure'}), status.HTTP_400_BAD_REQUEST
     else:
         #return project creation form:
         form = ProjectAddForm()
@@ -185,29 +197,46 @@ def delete_project(project_id):
 @app.route('/cad/api/v0.1/variables/add/<int:project_id>', methods = ['GET','POST'])
 def add_variable(project_id):
     #type of variable must be worked out from the request:
-    if request.headers['Content-Type'] == 'application/json':
+    if (request.headers['Content-Type'] == 'application/json') and (request.method.lower() == "post"):
         P = Project.query.get(project_id)
+        if P == None:
+            #project doesn't exist, return sth about that:
+            return jsonify({'variable':None, 'status':'project doesnt exist'}), status.HTTP_406_NOT_ACCEPTABLE
+        #
         #get json object:
+        if (not 'variable' in request.json):
+            return jsonify({'variable':None, 'status':'incomplite data'}), status.HTTP_406_NOT_ACCEPTABLE
         VAR = request.json['variable']
-        if 'type' in VAR and VAR['type'] == 'string':
-                if 'name' in VAR and 'value' in VAR:
-                    if not 'comment' in VAR:
-                        VAR['comment'] == ''
-                    v = String(VAR['name'],VAR['value'], project_id, VAR['comment'])
-        elif 'type' in VAR and VAR['type'] == 'number':
-                if 'name' in VAR and 'value' in VAR:
-                    if not 'comment' in VAR:
-                        VAR['comment'] == ''
-                    if not 'unit' in VAR:
-                        VAR['unit'] == ''
-                    v = Number(VAR['name'],VAR['value'], project_id, VAR['comment'], unit = VAR['unit'])
-        elif 'type' in VAR and VAR['type'] == 'boolean':
-                if 'name' in VAR and 'value' in VAR:
-                    if not 'comment' in VAR:
-                        VAR['comment'] == ''
-                    v = Boolean(VAR['name'],VAR['value'], project_id, VAR['comment'])
-        db.session.add(v)
-        db.session.commit()
+        #check if variable of the name exists within this project:
+        if (not 'name' in VAR) or (not 'value' in VAR):
+            return jsonify({'variable':None, 'status':'incomplite data'}), status.HTTP_406_NOT_ACCEPTABLE
+        elif not findVariable(project_id, VAR['name']) == None:
+            #exists, so return error:
+            return jsonify({'variable':None, 'status':'variable exists'}), status.HTTP_406_NOT_ACCEPTABLE
+
+        if ('type' in VAR) and (VAR['type'] == 'string'):
+                if not 'comment' in VAR:
+                    VAR['comment'] = ''
+                v = String(VAR['name'],VAR['value'], project_id, VAR['comment'])
+                db.session.add(v)
+                db.session.commit()
+                VAR = dict_model(String.query.filter_by(name=VAR['name'], project_id = project_id).first())
+        elif ('type' in VAR) and (VAR['type'] == 'number'):
+                if not 'comment' in VAR:
+                    VAR['comment'] = ''
+                if not 'unit' in VAR:
+                    VAR['unit'] = ''
+                v = Number(VAR['name'],VAR['value'], project_id, VAR['comment'], unit = VAR['unit'])
+                db.session.add(v)
+                db.session.commit()
+                VAR = dict_model(Number.query.filter_by(name=VAR['name'], project_id = project_id).first())
+        elif ('type' in VAR) and (VAR['type'] == 'boolean'):
+                if not 'comment' in VAR:
+                    VAR['comment'] = ''
+                v = Boolean(VAR['name'],VAR['value'], project_id, VAR['comment'])
+                db.session.add(v)
+                db.session.commit()
+                VAR = dict_model(Boolean.query.filter_by(name=VAR['name'], project_id = project_id).first())
         return jsonify({'variable':VAR})
     else:
         P = Project.query.get(project_id)
@@ -241,13 +270,22 @@ def add_variable(project_id):
 def edit_variable(project_id, variable_type, variable_id):
     #type of variable must be worked out from the request:
     variable_type = variable_type.lower()
+<<<<<<< HEAD
     if request.headers['Content-Type'] == 'application/json':
+=======
+    if (request.headers['Content-Type'] == 'application/json') and (request.method.lower() == "put"):
+        P = Project.query.get(project_id)
+        if P == None:
+            #project doesn't exist, return sth about that:
+            return jsonify({'variable':None, 'status':'project doesnt exist'}), status.HTTP_406_NOT_ACCEPTABLE
+>>>>>>> 0720e8a8ed77789c28fdbf55170350138cb78aa1
         if variable_type == 'string':
             v = String.query.get(variable_id)
         elif variable_type == 'number':
             v = Number.query.get(variable_id)
         elif variable_type == 'boolean':
             v = Boolean.query.get(variable_id)
+<<<<<<< HEAD
         if not v == None:
             #get json object:
             VAR = request.json['variable']
@@ -261,6 +299,24 @@ def edit_variable(project_id, variable_type, variable_id):
             return jsonify({'variable':VAR})
         else:
             return jsonify({'variable':None})
+=======
+        if v == None:
+            #project doesn't exist, return sth about that:
+            return jsonify({'variable':None, 'status':'variable doesnt exist'}), status.HTTP_406_NOT_ACCEPTABLE
+        if (not v == None) and (not P == None):
+            #get json object:
+            VAR = request.json['variable']
+            if ('name' in VAR) and (not VAR['name'] == v.name):
+                v.name = VAR['name']
+            if ('value' in VAR) and (not VAR['value'] == v.value):
+                v.value = VAR['value']
+            if ('comment' in VAR) and  (not VAR['comment'] == v.comment):
+                v.comment = VAR['comment']
+            db.session.commit()
+            return jsonify({'variable':VAR, 'status':'success'}), status.HTTP_201_CREATED
+        else:
+            return jsonify({'variable':None}), status.HTTP_406_NOT_ACCEPTABLE
+>>>>>>> 0720e8a8ed77789c28fdbf55170350138cb78aa1
     else:
         #regular html request
         P = Project.query.get(project_id)
@@ -332,9 +388,23 @@ def edit_variable_by_name(project_id, variable_name):
     elif not v == False:
         #we have one variable, return json of it:
         if request.headers['Content-Type'] == 'application/json':
-            return jsnify({'variable':dict_model(v)})
+            if (not v == None):
+                #get json object:
+                VAR = request.json['variable']
+                if ('name' in VAR) and (not VAR['name'] == v.name):
+                    v.name = VAR['name']
+                if ('value' in VAR) and (not VAR['value'] == v.value):
+                    v.value = VAR['value']
+                if ('comment' in VAR) and  (not VAR['comment'] == v.comment):
+                    v.comment = VAR['comment']
+                db.session.commit()
+                return jsonify({'variable':VAR, 'status':'success'}), status.HTTP_201_CREATED
+
+            else:
+                return jsonify({'variable':None}), status.HTTP_406_NOT_ACCEPTABLE
         else:
             return redirect(url_for('edit_variable', project_id = project_id, variable_type = v.type, variable_id = v.id))
+        #return redirect(url_for('edit_variable', project_id = project_id, variable_type = v.type, variable_id = v.id), code = status.HTTP_304_NOT_MODIFIED)
 
 #get all variables for given project number
 @app.route('/cad/api/v0.1/variables/<int:project_id>')

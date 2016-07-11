@@ -31,10 +31,15 @@ variables.append({"name":"track_depth", "value":8.4, "type":"number"})
 variables.append({"name":"tracks_pitch", "value":28., "type":"number"})
 variables.append({"name":"no_of_tracks", "value":5, "type":"number"})
 
+variables = []
+variables.append({"name":"SEND_FROM_NCI_1", "value":1.2, "type":"number"})
+variables.append({"name":"SEND_FROM_NCI_2", "value":220, "type":"number"})
+
 for P in projects['projects']:
     print ""
     print "crating variables for project " + projects['projects'][P]["project_number"]
     for v in variables:
+        """
         if v['name'] == "custom_engraving_on":
             v['value'] = random.choice([0,1])
         elif v['name'] == "custom_engraving":
@@ -53,5 +58,6 @@ for P in projects['projects']:
             v['value'] = random.uniform(15.,20.)
         elif v['name'] == "no_of_tracks":
             v['value'] = random.randint(5,10)
-        print CC.add_variable(P, v)
+        """
+        CC.add_variable(P, v)
         print v
