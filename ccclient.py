@@ -1,5 +1,10 @@
-#client app to connect to ccloud server app
+#ccclient.py - client app to connect to ccloud server app
+#@author:    Leszek Dubicki
+#studentID:  x14125439
+#email:  leszek.dubicki@ student.ncirl.ie
+#@date: 08/12/2015
 import requests
+import json
 
 class CCloud:
     #class to perform operations on single CADCloud web app (given by base URL)
@@ -72,6 +77,7 @@ class CCloud:
             return r.json()
         else:
             return {'status_code':r.status_code, 'numbers':[], 'strings':[], 'booleans':[]}
+
     def get_variable(self, project_id, variable_name):
         #gets one variable
         uri = '/cad/api/v0.1/get_variable/' + str(project_id) + '/' + str(variable_name)
@@ -84,6 +90,60 @@ class CCloud:
         else:
             return {'status_code':r.status_code, variable_name:""}
 
+    def set_variable(self, project_id, variable_data):
+        #sends variable data to the server
+        if (not 'name' in variable_data):
+            return {'status_code':1405, 'variable':None}
+        else:
+            variable_name = variable_data['name']
+        uri = '/cad/api/v0.1/variables/edit/' + str(project_id) + '/' + str(variable_name)
+        if self.checkUrl() == True:
+            r = requests.put(self._url + uri, headers = self._headers, data=json.dumps({'variable':variable_data}))
+        else:
+            return {'status_code':1404, 'variable':None}
+        if (r.status_code >= 200) and (r.status_code < 300):
+            print r.content
+            result = r.json()
+            result['status_code'] = r.status_code
+            return result
+        else:
+            print r.content
+            return {'status_code':r.status_code,'variable':None}
+    def set_variable_by_id(self, project_id, variable_data):
+        #sends variable data to the server
+        if (not 'id' in variable_data) or (not 'type' in variable_data):
+            return {'status_code':1405, 'variable':None}
+        else:
+            variable_id = variable_data['id']
+            variable_type = variable_data['type']
+        uri = '/cad/api/v0.1/variables/edit/' + str(project_id) + '/' + str(variable_type) + '/' + str(variable_id)  #'<int:project_id>/<string:variable_type>/<int:variable_id>'
+        if self.checkUrl() == True:
+            r = requests.put(self._url + uri, headers = self._headers, data=json.dumps({'variable':variable_data}))
+        else:
+            return {'status_code':1404, 'variable':None}
+        if (r.status_code >= 200) and (r.status_code < 300):
+            print r.content
+            result = r.json()
+            result['status_code'] = r.status_code
+            return result
+        else:
+            print r.content
+            return {'status_code':r.status_code,'variable':None}
+        
+    def add_variable(self, project_id, variable_data):
+        #adds new variable data to the server
+        uri = '/cad/api/v0.1/variables/add/' + str(project_id)
+        if self.checkUrl() == True:
+            r = requests.post(self._url + uri, headers = self._headers, data=json.dumps({'variable':variable_data}))
+        else:
+            return {'status_code':1404, 'variable':None}
+        if (r.status_code >= 200) and (r.status_code < 300):
+            print r.content
+            return r.json()
+        else:
+            print r.content
+            return {'status_code':r.status_code,'variable':None}
+
     def get_project_by_number(self, project_number):
         #project_number should be a string already but it's converted to str just in case:
         uri = '/cad/api/v0.1/projects_by_num/' + str(project_number)
@@ -94,6 +154,19 @@ class CCloud:
         if r.status_code == 200:
             return r.json()
         else:
+            return {'status_code':r.status_code,'project':None}
+    def add_project(self, project_data):
+        #creates new project on the server:
+        uri = '/cad/api/v0.1/projects/add'
+        if self.checkUrl() == True:
+            r = requests.post(self._url + uri, headers = self._headers, data=json.dumps({'project':project_data}))
+        else:
+            return {'status_code':1404, 'project':None}
+        if (r.status_code >= 200) and (r.status_code < 300):
+            print r.content
+            return r.json()
+        else:
+            print r.content
             return {'status_code':r.status_code,'project':None}
 
     def get_project(self, project_id):

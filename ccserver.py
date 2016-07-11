@@ -275,6 +275,7 @@ def edit_variable(project_id, variable_type, variable_id):
         if P == None:
             #project doesn't exist, return sth about that:
             return jsonify({'variable':None, 'status':'project doesnt exist'}), status.HTTP_406_NOT_ACCEPTABLE
+    if request.headers['Content-Type'] == 'application/json':
         if variable_type == 'string':
             v = String.query.get(variable_id)
         elif variable_type == 'number':
