@@ -13,7 +13,8 @@ projects = ['TEST124', 'TEST125' , 'TEST126', 'TEST127', 'TEST128', 'TEST129', '
 
 #actually, why not take all projects from the server:
 CC = ccclient.CCloud()
-CC.setUrl("http://leszekdubicki.pythonanywhere.com")
+#CC.setUrl("http://leszekdubicki.pythonanywhere.com")
+CC.setUrl("http://83.212.126.181:5000")
 projects = CC.get_projects()
 print projects
 
