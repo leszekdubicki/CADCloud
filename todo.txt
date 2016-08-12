@@ -1,0 +1,7 @@
+ideas to improvement:
+1. send the whole tree to the server for linking
+2. add sketch segments and all dimensions to the tree also so it's easier
+3. add possibility / example to use with checking/audit activities
+4. implement version control
+5. file/components/subparts names - resolve them dynamically so cc updates them correctly even though the assembly were pack and went somewhere
+6. when packandgone - allog adding branch to the cc to make changes in the configuration model (new project)
